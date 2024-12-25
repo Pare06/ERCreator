@@ -155,10 +155,16 @@ public partial class ERForm : Form
             TextWriter defaultOut = Console.Out;
             string path = Path.GetFullPath(saveSqlDialog.FileName);
 
-            using (StreamWriter outStream = new StreamWriter(path))
+            StreamWriter outStream = new StreamWriter(path);
+            Console.SetOut(outStream);
+            if (!WriteSQL(false))
             {
-                Console.SetOut(outStream);
-                WriteSQL(false);
+                outStream.Dispose();
+                File.Delete(path);
+            }
+            else
+            {
+                outStream.Dispose();
             }
 
             Console.SetOut(defaultOut);

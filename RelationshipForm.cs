@@ -8,16 +8,21 @@ public partial class RelationshipForm : Form
     private readonly Entity firstEntity;
     private readonly Entity secondEntity;
 
+    public bool Valid { get; }
+
     public RelationshipForm()
     {
         Relationship r = (Relationship)ERForm.Active!;
         links = ERForm.MainForm.GetLinks(r);
 
-        if (links.Count() < 2)
+        if (links.Count() != 2)
         {
-            MessageBox.Show("La relazione deve avere almeno due entità collegate!");
+            MessageBox.Show("La relazione deve avere due entità collegate!");
+            Valid = false;
             return;
         }
+
+        Valid = true;
 
         firstEntity = links.First().LinkedEntity!;
         secondEntity = links.ElementAt(1).LinkedEntity!;

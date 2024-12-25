@@ -1,4 +1,4 @@
-using System.Security.Principal;
+using System.Text;
 using ERCreator.Controls;
 using Timer = System.Windows.Forms.Timer;
 
@@ -14,6 +14,7 @@ public partial class ERForm : Form
     private readonly List<Link> links = []; // collegamenti
     private readonly List<AttributeLink> attrLinks = []; // collegamenti form
     private readonly Graphics g;
+    private bool validSql = false; // il modello è convertibile in sql?
 
     public ERForm()
     {
@@ -142,6 +143,22 @@ public partial class ERForm : Form
         new SettingsForm().ShowDialog();
     }
 
+    private void exportSqlButton_Click(object sender, EventArgs e)
+    {
+        if (saveSqlDialog.ShowDialog() == DialogResult.OK)
+        {
+            TextWriter defaultOut = Console.Out;
+
+            using (StreamWriter outStream = new StreamWriter(Path.GetFullPath(saveSqlDialog.FileName)))
+            {
+                Console.SetOut(outStream);
+                WriteSQL(false);
+            }
+
+            Console.SetOut(defaultOut);
+        }
+    }
+
     // r-click
 
     // collega entità
@@ -167,7 +184,13 @@ public partial class ERForm : Form
     // modifica relazione
     private void EditR(object sender, EventArgs e)
     {
-        new RelationshipForm().ShowDialog();
+        RelationshipForm rf = new();
+
+        if (rf.Valid)
+        {
+            rf.ShowDialog();
+        }
+        Active = null;
     }
 
     // elimina entità/relazione
@@ -216,8 +239,15 @@ public partial class ERForm : Form
 
     private void CreateSQL(object sender, EventArgs eA)
     {
+        WriteSQL(true);
+    }
+
+    private void WriteSQL(bool showConsole)
+    {
         entities = allComponents.Where(c => c is Entity && !c.IsMenu).Cast<Entity>().ToList();
         relationships = allComponents.Where(c => c is Relationship && !c.IsMenu).Cast<Relationship>().ToList();
+
+        validSql = false;
 
         if (!entities.Any())
         {
@@ -261,7 +291,10 @@ public partial class ERForm : Form
             }
         }
 
-        Windows.ShowWindow(Windows.GetConsoleWindow(), Windows.SW_SHOW);
+        if (showConsole)
+        {
+            Windows.ShowWindow(Windows.GetConsoleWindow(), Windows.SW_SHOW);
+        }
 
         foreach (Entity entity in entities)
         {
@@ -283,15 +316,20 @@ public partial class ERForm : Form
             PrintRelationship(relationship);
         }
 
-        // per qualche motivo è completamente impossibile chiudere la console di Windows senza che si chiuda tutto il programma.
-        WriteColored("""
-                     Per chiudere questa finestra, premi #EINVIO#F.
-                     #4NON#F chiuderla premento la X!
-                     """);
+        validSql = true;
 
-        Console.ReadLine();
-        Console.Clear();
-        Windows.ShowWindow(Windows.GetConsoleWindow(), Windows.SW_HIDE);
+        if (showConsole)
+        {
+            // per qualche motivo è completamente impossibile chiudere la console di Windows senza che si chiuda tutto il programma.
+            WriteColored("""
+                         Per chiudere questa finestra, premi #EINVIO#F.
+                         #4NON#F chiuderla premento la X!
+                         """);
+
+            Console.ReadLine();
+            Console.Clear();
+            Windows.ShowWindow(Windows.GetConsoleWindow(), Windows.SW_HIDE);
+        }
     }
 
     private static void PrintEntity(Entity e)
@@ -444,7 +482,7 @@ public partial class ERForm : Form
                 {
                     Console.Write(", ");
                 }
-                
+
             }
 
             WriteColored($") #9REFERENCES #E{e.Name}#F(");
@@ -460,7 +498,7 @@ public partial class ERForm : Form
                 }
 
             }
-            
+
             Console.WriteLine(')');
             Console.WriteLine(");\n");
         }
@@ -469,7 +507,7 @@ public partial class ERForm : Form
     private void PrintRelationship(Relationship r)
     {
         var linkedEntities = links.Where(l => l.LinkedRelationship == r).Select(l => (l.LinkedEntity, l.Cardinality));
-        
+
         // entità con collegamenti 0/1/N, N
         var neededLinkedEntities = linkedEntities.Where(lE =>
             lE.Cardinality == Cardinality.ManyToMany || linkedEntities.All(lE1 =>
@@ -505,7 +543,7 @@ public partial class ERForm : Form
                     Console.WriteLine();
                 }
             }
-            
+
             Console.WriteLine(");\n");
         }
     }
@@ -513,7 +551,7 @@ public partial class ERForm : Form
     private static void WriteColored(string str)
     {
         Console.ForegroundColor = ConsoleColor.White;
-    
+
         for (int i = 0; i < str.Length; i++)
         {
             if (str[i] == '#')
@@ -537,7 +575,7 @@ public partial class ERForm : Form
     private static bool IsInvalid(string name) => name.ToList().Any(c => !char.IsDigit(c) && !char.IsLetter(c) && c != '_');
 
     private static string Indent() => Settings.UseTabs ? "\t" : "  ";
-    
+
     private static string GetSqlType(string type, int length)
     {
         return type switch

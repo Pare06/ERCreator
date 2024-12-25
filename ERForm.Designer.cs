@@ -31,8 +31,8 @@ namespace ERCreator
         private void InitializeComponent()
         {
             components = new System.ComponentModel.Container();
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(ERForm));
             elementsPanel = new Panel();
+            exportSqlButton = new Button();
             toSqlButton = new Button();
             settingsButton = new Button();
             entityLabel = new Label();
@@ -50,6 +50,7 @@ namespace ERCreator
             linkActionMenu = new ContextMenuStrip(components);
             eliminaToolStripMenuItem1 = new ToolStripMenuItem();
             eliminaToolStripMenuItem2 = new ToolStripMenuItem();
+            saveSqlDialog = new SaveFileDialog();
             elementsPanel.SuspendLayout();
             entityActionMenu.SuspendLayout();
             relationshipActionMenu.SuspendLayout();
@@ -59,6 +60,7 @@ namespace ERCreator
             // elementsPanel
             // 
             elementsPanel.BackColor = Color.LightGray;
+            elementsPanel.Controls.Add(exportSqlButton);
             elementsPanel.Controls.Add(toSqlButton);
             elementsPanel.Controls.Add(settingsButton);
             elementsPanel.Controls.Add(entityLabel);
@@ -67,8 +69,18 @@ namespace ERCreator
             elementsPanel.Controls.Add(menuRelationship);
             elementsPanel.Location = new Point(12, 12);
             elementsPanel.Name = "elementsPanel";
-            elementsPanel.Size = new Size(152, 210);
+            elementsPanel.Size = new Size(152, 240);
             elementsPanel.TabIndex = 0;
+            // 
+            // exportSqlButton
+            // 
+            exportSqlButton.Location = new Point(12, 190);
+            exportSqlButton.Name = "exportSqlButton";
+            exportSqlButton.Size = new Size(113, 23);
+            exportSqlButton.TabIndex = 6;
+            exportSqlButton.Text = "Esporta SQL";
+            exportSqlButton.UseVisualStyleBackColor = true;
+            exportSqlButton.Click += exportSqlButton_Click;
             // 
             // toSqlButton
             // 
@@ -101,6 +113,7 @@ namespace ERCreator
             // 
             // menuEntity
             // 
+            menuEntity.Attributes = null;
             menuEntity.Location = new Point(75, 17);
             menuEntity.Name = "menuEntity";
             menuEntity.Size = new Size(63, 35);
@@ -154,27 +167,27 @@ namespace ERCreator
             // 
             relationshipActionMenu.Items.AddRange(new ToolStripItem[] { toolStripMenuItem1, toolStripMenuItem3, toolStripMenuItem4 });
             relationshipActionMenu.Name = "contextMenuStrip1";
-            relationshipActionMenu.Size = new Size(181, 92);
+            relationshipActionMenu.Size = new Size(123, 70);
             relationshipActionMenu.Closed += CloseActionMenu;
             // 
             // toolStripMenuItem1
             // 
             toolStripMenuItem1.Name = "toolStripMenuItem1";
-            toolStripMenuItem1.Size = new Size(180, 22);
+            toolStripMenuItem1.Size = new Size(122, 22);
             toolStripMenuItem1.Text = "Collega";
             toolStripMenuItem1.Click += CreateLinkR;
             // 
             // toolStripMenuItem3
             // 
             toolStripMenuItem3.Name = "toolStripMenuItem3";
-            toolStripMenuItem3.Size = new Size(180, 22);
+            toolStripMenuItem3.Size = new Size(122, 22);
             toolStripMenuItem3.Text = "Proprietà";
             toolStripMenuItem3.Click += EditR;
             // 
             // toolStripMenuItem4
             // 
             toolStripMenuItem4.Name = "toolStripMenuItem4";
-            toolStripMenuItem4.Size = new Size(180, 22);
+            toolStripMenuItem4.Size = new Size(122, 22);
             toolStripMenuItem4.Text = "Elimina";
             toolStripMenuItem4.Click += DeleteER;
             // 
@@ -195,6 +208,12 @@ namespace ERCreator
             eliminaToolStripMenuItem2.Name = "eliminaToolStripMenuItem2";
             eliminaToolStripMenuItem2.Size = new Size(122, 22);
             eliminaToolStripMenuItem2.Text = "Elimina";
+            // 
+            // saveSqlDialog
+            // 
+            saveSqlDialog.DefaultExt = "sql";
+            saveSqlDialog.FileName = "export";
+            saveSqlDialog.Filter = "Query SQL|*.sql|Tutti i file|*.*";
             // 
             // ERForm
             // 
@@ -232,5 +251,7 @@ namespace ERCreator
         private ToolStripMenuItem eliminaToolStripMenuItem1;
         private ToolStripMenuItem eliminaToolStripMenuItem2;
         private Button toSqlButton;
+        private Button exportSqlButton;
+        private SaveFileDialog saveSqlDialog;
     }
 }

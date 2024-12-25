@@ -1,3 +1,4 @@
+using System.Configuration;
 using System.Text;
 using ERCreator.Controls;
 using Timer = System.Windows.Forms.Timer;
@@ -14,7 +15,7 @@ public partial class ERForm : Form
     private readonly List<Link> links = []; // collegamenti
     private readonly List<AttributeLink> attrLinks = []; // collegamenti form
     private readonly Graphics g;
-    private bool validSql = false; // il modello è convertibile in sql?
+    private Dictionary<BaseComponent, Point> componentLocations = []; // posizioni degli elementi nel form
 
     public ERForm()
     {
@@ -34,10 +35,14 @@ public partial class ERForm : Form
 
     public void DrawLinks(object? sender, EventArgs e)
     {
-        if (frameCount++ % 2 == 0)
+        if (frameCount % 2 == 0 && IsCreatingLink || allComponents.Any(c => !c.IsMenu && componentLocations.ContainsKey(c) && componentLocations[c] != c.Location))
         {
             Invalidate();
         }
+
+        frameCount++;
+
+        componentLocations = allComponents.Select(c => (c, c.Location)).ToDictionary();
 
         // rimuovi i collegamenti temporanei rimasti
         if (!IsCreatingLink)
@@ -65,7 +70,7 @@ public partial class ERForm : Form
             // disegna il collegamento tra entità e attributo
             g.DrawLine(new Pen(Settings.LinkColor), l.Entity.CenterPoint, l.CenterPoint);
             // scrivi la cardinalità in base alla posizione dell'attributo rispetto all'entità
-            g.DrawString(l.Name, new Font(Settings.FontFamily, 10, FontStyle.Bold), new SolidBrush(Settings.FontColor), l.CenterPoint with { Y = l.Location.Y + (Math.Sign(l.Location.Y - l.Entity.Location.Y)) * 40 });
+            g.DrawString(l.Name, new Font(Settings.FontFamily, 10), new SolidBrush(Settings.FontColor), l.CenterPoint with { Y = l.Location.Y + (Math.Sign(l.Location.Y - l.Entity.Location.Y)) * 40 });
             if (l.Optional || l.Multiple)
             {
                 g.DrawString($"{(l.Optional ? "0" : "1")}, {(l.Multiple ? "N" : "1")}", new Font(Settings.FontFamily, 10), new SolidBrush(Settings.FontColor), l.Entity.Location.FindMiddle(l.Location));
@@ -148,8 +153,9 @@ public partial class ERForm : Form
         if (saveSqlDialog.ShowDialog() == DialogResult.OK)
         {
             TextWriter defaultOut = Console.Out;
+            string path = Path.GetFullPath(saveSqlDialog.FileName);
 
-            using (StreamWriter outStream = new StreamWriter(Path.GetFullPath(saveSqlDialog.FileName)))
+            using (StreamWriter outStream = new StreamWriter(path))
             {
                 Console.SetOut(outStream);
                 WriteSQL(false);
@@ -242,17 +248,15 @@ public partial class ERForm : Form
         WriteSQL(true);
     }
 
-    private void WriteSQL(bool showConsole)
+    private bool WriteSQL(bool showConsole)
     {
         entities = allComponents.Where(c => c is Entity && !c.IsMenu).Cast<Entity>().ToList();
         relationships = allComponents.Where(c => c is Relationship && !c.IsMenu).Cast<Relationship>().ToList();
 
-        validSql = false;
-
         if (!entities.Any())
         {
             MessageBox.Show("Non ci sono entità!");
-            return;
+            return false;
         }
 
         foreach (BaseComponent c in allComponents.Where(c => !c.IsMenu))
@@ -264,7 +268,7 @@ public partial class ERForm : Form
             if (IsInvalid(c.Name))
             {
                 MessageBox.Show($"Caratteri non validi {(c is Entity ? "nell'entità " : "nella relazione ")} {c.Name}!");
-                return;
+                return false;
             }
         }
 
@@ -273,7 +277,7 @@ public partial class ERForm : Form
             if (entity.PrimaryAttributes.Count == 0)
             {
                 MessageBox.Show($"L'entità {entity.Name} non ha attributi primari!");
-                return;
+                return false;
             }
 
             if (Settings.AutoCorrect)
@@ -286,7 +290,7 @@ public partial class ERForm : Form
                 if (IsInvalid(name))
                 {
                     MessageBox.Show($"Caratteri non validi nell'attributo {name} dell'entità {entity.Name}!");
-                    return;
+                    return false;
                 }
             }
         }
@@ -316,8 +320,6 @@ public partial class ERForm : Form
             PrintRelationship(relationship);
         }
 
-        validSql = true;
-
         if (showConsole)
         {
             // per qualche motivo è completamente impossibile chiudere la console di Windows senza che si chiuda tutto il programma.
@@ -330,6 +332,8 @@ public partial class ERForm : Form
             Console.Clear();
             Windows.ShowWindow(Windows.GetConsoleWindow(), Windows.SW_HIDE);
         }
+
+        return true;
     }
 
     private static void PrintEntity(Entity e)

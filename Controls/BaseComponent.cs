@@ -26,7 +26,7 @@ public abstract class BaseComponent : UserControl
     {
         if (!IsMenu)
         {
-            g.DrawString(Name, new Font(Settings.FontFamily, 8, FontStyle.Bold), new SolidBrush(Settings.FontColor), clip.X, clip.Y + yDist);
+            g.DrawString(Name, new Font(Settings.FontFamily, 8), new SolidBrush(Settings.FontColor), clip.X, clip.Y + yDist);
         }
     }
 

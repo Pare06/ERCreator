@@ -10,13 +10,15 @@ public class Attribute
     public string Type { get; set; }
     public bool AutoIncrement { get; set; }
     public int Length { get; set; }
-
-    public Attribute(bool primary, bool optional, string type, bool autoIncrement, int length)
+    public bool Multiple { get; set; }
+    
+    public Attribute(bool primary, bool optional, string type, bool autoIncrement, int length, bool multiple)
     {
         Primary = primary;
         Optional = optional;
         Type = type;
         AutoIncrement = autoIncrement;
         Length = length;
+        Multiple = multiple;
     }
 }

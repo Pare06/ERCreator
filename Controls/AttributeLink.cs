@@ -16,17 +16,19 @@ public class AttributeLink : BaseComponent
     /// <summary>
     /// Indica se l'attributo è opzionale.
     /// </summary>
-    // TODO 0,1/N su form
     public bool Optional { get; set; }
+    /// <summary>
+    /// Indica se l'attributo è multiplo.
+    /// </summary>
+    public bool Multiple { get; set; }
 
-    // TODO multiple
-
-    public AttributeLink(string name, Entity e, bool primary, bool optional)
+    public AttributeLink(string name, Entity e, bool primary, bool optional, bool multiple)
     {
         Name = name;
         Entity = e;
         Primary = primary;
         Optional = optional;
+        Multiple = multiple;
         Scale(new SizeF(0.2f, 0.2f));
     }
 

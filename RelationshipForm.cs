@@ -13,9 +13,9 @@ public partial class RelationshipForm : Form
         Relationship r = (Relationship)ERForm.Active!;
         links = ERForm.MainForm.GetLinks(r);
 
-        if (links.Count() != 2)
+        if (links.Count() < 2)
         {
-            MessageBox.Show("La relazione deve avere due entità collegate!");
+            MessageBox.Show("La relazione deve avere almeno due entità collegate!");
             return;
         }
 

@@ -1,3 +1,4 @@
+using System.Security.Principal;
 using ERCreator.Controls;
 using Timer = System.Windows.Forms.Timer;
 
@@ -54,8 +55,7 @@ public partial class ERForm : Form
             {
                 // disegna il collegamento tra i due elementi, e scrive la sua cardinalità al centro
                 g.DrawLine(new Pen(Settings.LinkColor), l.LinkedEntity!.CenterPoint, l.LinkedRelationship!.CenterPoint);
-                Point middlePoint = new((l.LinkedEntity!.Location.X + l.LinkedRelationship!.Location.X) / 2, (l.LinkedEntity!.Location.Y + l.LinkedRelationship!.Location.Y) / 2);
-                g.DrawString(l.Cardinality.ConvertToModel(), new Font(Settings.FontFamily, 8), new SolidBrush(Settings.FontColor), middlePoint);
+                g.DrawString(l.Cardinality.ConvertToModel(), new Font(Settings.FontFamily, 8), new SolidBrush(Settings.FontColor), l.LinkedEntity.Location.FindMiddle(l.LinkedRelationship.Location));
             }
         }
 
@@ -65,6 +65,10 @@ public partial class ERForm : Form
             g.DrawLine(new Pen(Settings.LinkColor), l.Entity.CenterPoint, l.CenterPoint);
             // scrivi la cardinalità in base alla posizione dell'attributo rispetto all'entità
             g.DrawString(l.Name, new Font(Settings.FontFamily, 10, FontStyle.Bold), new SolidBrush(Settings.FontColor), l.CenterPoint with { Y = l.Location.Y + (Math.Sign(l.Location.Y - l.Entity.Location.Y)) * 40 });
+            if (l.Optional || l.Multiple)
+            {
+                g.DrawString($"{(l.Optional ? "0" : "1")}, {(l.Multiple ? "N" : "1")}", new Font(Settings.FontFamily, 10), new SolidBrush(Settings.FontColor), l.Entity.Location.FindMiddle(l.Location));
+            }
         }
     }
 
@@ -236,7 +240,7 @@ public partial class ERForm : Form
 
         foreach (Entity entity in entities)
         {
-            if (!entity.PrimaryAttributes.Any())
+            if (entity.PrimaryAttributes.Count == 0)
             {
                 MessageBox.Show($"L'entità {entity.Name} non ha attributi primari!");
                 return;
@@ -269,6 +273,11 @@ public partial class ERForm : Form
             PrintEntityForeigns(entity);
         }
 
+        foreach (Entity entity in entities)
+        {
+            PrintMultiples(entity);
+        }
+
         foreach (Relationship relationship in relationships)
         {
             PrintRelationship(relationship);
@@ -287,7 +296,7 @@ public partial class ERForm : Form
 
     private static void PrintEntity(Entity e)
     {
-        var attributes = e.Attributes.Select(a => (a.Key, a.Value)).ToList();
+        var attributes = e.Attributes.Select(a => (a.Key, a.Value)).Where(a => !a.Value.Multiple).ToList(); // escludi multipli
         var primaries = e.PrimaryAttributes;
 
         WriteColored($"#9CREATE TABLE #E{CorrectedName(e.Name)} #F(\n");
@@ -396,6 +405,64 @@ public partial class ERForm : Form
             }
 
             Console.WriteLine(i != linkedEntitiesWithoutNewTable.Count - 1 ? ")," : ");\n");
+        }
+    }
+
+    private static void PrintMultiples(Entity e)
+    {
+        var multiples = e.Attributes.Where(a => a.Value.Multiple).ToList();
+        var primaries = e.PrimaryAttributes;
+
+        foreach ((string name, Attribute attr) in multiples)
+        {
+            WriteColored($"#9CREATE TABLE #E{CorrectedName($"{e.Name}_{name}")} #F(\n");
+
+            foreach ((string pName, Attribute pAttr) in primaries)
+            {
+                Console.Write(Indent());
+                WriteColored($"#C{CorrectedName($"{e.Name}_{pName}")} #9{GetSqlType(pAttr.Type, pAttr.Length)} #9NOT NULL#F,\n");
+            }
+
+            Console.Write(Indent());
+            WriteColored($"#C{CorrectedName(name)} #9{GetSqlType(attr.Type, attr.Length)}");
+
+            if (!attr.Optional)
+            {
+                WriteColored(" #9NOT NULL");
+            }
+            Console.WriteLine(',');
+
+            Console.Write(Indent());
+            WriteColored("#9FOREIGN KEY #F(");
+
+            for (int i = 0; i < primaries.ToList().Count; i++)
+            {
+                (string pName, _) = primaries.ToList()[i];
+                WriteColored($"#C{CorrectedName($"{e.Name}_{pName}")}");
+
+                if (i != primaries.Count - 1)
+                {
+                    Console.Write(", ");
+                }
+                
+            }
+
+            WriteColored($") #9REFERENCES #E{e.Name}#F(");
+
+            for (int i = 0; i < primaries.ToList().Count; i++)
+            {
+                (string pName, _) = primaries.ToList()[i];
+                WriteColored($"#C{CorrectedName($"{pName}")}");
+
+                if (i != primaries.Count - 1)
+                {
+                    Console.Write(", ");
+                }
+
+            }
+            
+            Console.WriteLine(')');
+            Console.WriteLine(");\n");
         }
     }
 

@@ -39,6 +39,7 @@
             saveEntityButton = new Button();
             label7 = new Label();
             label8 = new Label();
+            label9 = new Label();
             SuspendLayout();
             // 
             // label1
@@ -143,11 +144,21 @@
             label8.TabIndex = 9;
             label8.Text = "Lunghezza";
             // 
+            // label9
+            // 
+            label9.AutoSize = true;
+            label9.Location = new Point(471, 70);
+            label9.Name = "label9";
+            label9.Size = new Size(52, 15);
+            label9.TabIndex = 10;
+            label9.Text = "Multiplo";
+            // 
             // EntityForm
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(466, 161);
+            ClientSize = new Size(549, 161);
+            Controls.Add(label9);
             Controls.Add(label8);
             Controls.Add(label7);
             Controls.Add(saveEntityButton);
@@ -178,5 +189,6 @@
         private Button saveEntityButton;
         private Label label7;
         private Label label8;
+        private Label label9;
     }
 }

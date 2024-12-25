@@ -10,6 +10,11 @@ public static class Extensions
         return new(x, y);
     }
 
+    public static Point FindMiddle(this Point origin, Point other)
+    {
+        return new((origin.X + other.X) / 2, (origin.Y + other.Y) / 2);
+    }
+
     public static Cardinality ToCardinality(this string str)
     {
         return str switch

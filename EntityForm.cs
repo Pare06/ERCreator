@@ -10,6 +10,7 @@ public partial class EntityForm : Form
     private readonly List<ComboBox> types = [];
     private readonly List<CheckBox> autoIncrements = [];
     private readonly List<TextBox> lengths = [];
+    private readonly List<CheckBox> multiples = [];
 
     public EntityForm()
     {
@@ -19,7 +20,7 @@ public partial class EntityForm : Form
 
         foreach ((string name, Attribute attr) in ((Entity)ERForm.Active).Attributes)
         {
-            CreateAttribute(null!, null!, name, attr.Primary, attr.Optional, attr.Type, attr.AutoIncrement, attr.Length);
+            CreateAttribute(null!, null!, name, attr.Primary, attr.Optional, attr.Type, attr.AutoIncrement, attr.Length, attr.Multiple);
         }
     }
 
@@ -28,13 +29,13 @@ public partial class EntityForm : Form
     /// </summary>
     private void CreateAttribute(object sender, EventArgs e)
     {
-        CreateAttribute(sender, e, "", false, false, "", false, 10);
+        CreateAttribute(sender, e, "", false, false, "", false, 10, false);
     }
 
     /// <summary>
     /// Aggiunge una riga di elementi nel form per creare un attributo.
     /// </summary>
-    private void CreateAttribute(object sender, EventArgs e, string name, bool primary, bool optional, string type, bool autoIncrement, int length)
+    private void CreateAttribute(object sender, EventArgs e, string name, bool primary, bool optional, string type, bool autoIncrement, int length, bool multiple)
     {
         // crea spazio per i nuovi elementi
         createAttributeButton.Location = createAttributeButton.Location with { Y = createAttributeButton.Location.Y + 30 };
@@ -80,6 +81,12 @@ public partial class EntityForm : Form
         tbL.Text = length.ToString();
         lengths.Add(tbL);
 
+        CheckBox cbM = new(); // multiplo?
+        cbM.Location = new(480, 100 + 30 * multiples.Count);
+        cbM.Size = new(38, 20);
+        cbM.Checked = multiple;
+        multiples.Add(cbM);
+
         // aggiunge gli elementi al form
         Controls.Add(tbN);
         Controls.Add(cbP);
@@ -87,6 +94,7 @@ public partial class EntityForm : Form
         Controls.Add(cbT);
         Controls.Add(cbA);
         Controls.Add(tbL);
+        Controls.Add(cbM);
     }
 
     private void SaveEntity(object sender, EventArgs e)
@@ -122,13 +130,25 @@ public partial class EntityForm : Form
             MessageBox.Show("C'è una lunghezza non numerica!");
             return;
         }
-        
+
+        if (multiples.All(m => m.Checked))
+        {
+            MessageBox.Show("Deve esserci almeno un attributo non multiplo!");
+            return;
+        }
+
         Dictionary<string, Attribute> attributes = [];
         for (int i = 0; i < names.Count; i++)
         {
             if (primaries[i].Checked && optionals[i].Checked)
             {
                 MessageBox.Show("Una chiave primaria non può essere opzionale!");
+                return;
+            }
+
+            if (primaries[i].Checked && multiples[i].Checked)
+            {
+                MessageBox.Show("Una chiave primaria non può essere multipla!");
                 return;
             }
 
@@ -140,7 +160,7 @@ public partial class EntityForm : Form
             }
 
             // aggiungi gli attributi al Dictionary
-            attributes[names[i].Text] = new(primaries[i].Checked, optionals[i].Checked, types[i].Text, autoIncrements[i].Checked, length);
+            attributes[names[i].Text] = new(primaries[i].Checked, optionals[i].Checked, types[i].Text, autoIncrements[i].Checked, length, multiples[i].Checked);
         }
 
         // aggiorna gli attributi dell'entità
@@ -155,7 +175,7 @@ public partial class EntityForm : Form
         ERForm.MainForm.DeleteAttributeLinks(entity);
         foreach ((string name, Attribute attr) in attributes)
         {
-            AttributeLink link = new(name, entity, attr.Primary, attr.Optional);
+            AttributeLink link = new(name, entity, attr.Primary, attr.Optional, attr.Multiple);
             // gira l'attributo
             link.Location = entity.CenterPoint.RotateAroundPoint(entity.CenterPoint with { X = entity.CenterPoint.X + 100 }, stepRadians * step);
             step++;

@@ -118,7 +118,6 @@ public partial class ERForm : Form
         }
     }
 
-    // TODO è necessario?
     public new void Invalidate()
     {
         base.Invalidate();
